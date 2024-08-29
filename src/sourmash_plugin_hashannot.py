@@ -11,7 +11,11 @@ Need help? Have questions? Ask at http://github.com/sourmash-bio/sourmash/issues
 """
 
 import argparse
+import screed
 import sourmash
+from collections import defaultdict, Counter
+from interval import interval
+import gzip
 
 from sourmash.plugins import CommandLinePlugin
 
@@ -111,7 +115,7 @@ def extract_surrounding(args):
                 total_run_seq += end - start + 1
                 filtered_seqs.append((record.name, record.sequence[start:end + 1]))
 
-            print(record.name, len(record.sequence), total_run_seq)
+            print(f"found intervall: {record.name}, original {len(record.sequence)}, extracted {total_run_seq}")
 
     # double check?
     check_mh = query_sig.minhash.copy_and_clear()
@@ -129,6 +133,9 @@ def extract_surrounding(args):
         with xopen(args.output_contigs, 'wt') as fp:
             for n, (name, seq) in enumerate(filtered_seqs):
                 fp.write(f">{name}.{n}\n{seq}\n")
+    else:
+        print("(no contigs output; use '-o'")
+                
 
 
 # QUESTIONS: do hashes tend to be in runs?
