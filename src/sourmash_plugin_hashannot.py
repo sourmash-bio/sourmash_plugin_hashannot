@@ -88,6 +88,8 @@ def extract_surrounding(args):
             continue
         else:
             # go through _all_ kmers/hashes, not just fracminhash subset
+            # @CTB why do we need all? when we construct hash positions we
+            # filter...
             hash_iter = background_mh.seq_to_hashes(record.sequence,
                                                     force=True,
                                                     bad_kmers_as_zeroes=True)
@@ -217,11 +219,13 @@ class Command_Make_HashAnnotDB(CommandLinePlugin):
         make_hashannotdb(args)
 
 
+# @CTB check reverse complement stuff
 def make_hashannotdb(args):
     print('here!')
     moltype = calculate_moltype(args, 'DNA')
     print(f"ksize={args.ksize} moltype={moltype} scaled={args.scaled}")
 
+    features_by_records = defaultdict(list)
     with open(args.gff_file) as fp:
         lines = [ x.strip() for x in fp if not x.startswith('#') ]
         print(f"loaded {len(lines)} rows from '{args.gff_file}'")
@@ -229,3 +233,16 @@ def make_hashannotdb(args):
         for n, tok in enumerate(line):
             print(n, tok)
         record_name, feature_id, feature_type, start, end, _, strand, _, annot = line
+        # convert to class?
+        features_by_records[record_name].append((start, end, strand, feature_id, feature_type, annot))
+
+    records_by_ident = {}
+    for record in screed.open(args.genome):
+        record_ident = record.name.split(' ')[0]
+        records_by_ident[record_ident] = record
+
+    fa_record_names = set(records_by_ident)
+    gff_record_names = set(features_by_records)
+
+    # only accept GFFs that match the genome
+    assert gff_record_names.issubset(fa_record_names), f"unknown sequences mentioned in GFF: {gff_record_names - fa_record_names}"
