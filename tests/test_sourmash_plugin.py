@@ -25,6 +25,8 @@ def test_simple(runtmp):
     # sketch 47
     sig47 = runtmp.output('47.sig.zip')
     runtmp.sourmash('sketch', 'dna', shew47, '-o', sig47)
+    ss = list(sourmash.load_file_as_signatures(sig47))[0]
+    mh47 = ss.minhash
 
     # extract from 63
     contigs = runtmp.output('out.fa')
@@ -35,6 +37,26 @@ def test_simple(runtmp):
     assert "original 500000, extracted 293015" in out
 
     assert os.path.exists(contigs)
+
+    # create a sketch from extracted contigs
+    match_sig = runtmp.output('matches.sig.zip')
+    runtmp.sourmash('sketch', 'dna', contigs, '-o', match_sig)
+
+    ss = list(sourmash.load_file_as_signatures(match_sig))[0]
+    mh_match = ss.minhash
+
+    # sketch 63
+    sig63 = runtmp.output('63.sig.zip')
+    runtmp.sourmash('sketch', 'dna', shew63, '-o', sig63)
+    ss = list(sourmash.load_file_as_signatures(sig63))[0]
+    mh63 = ss.minhash
+
+    # matches should be contained in both 63 and 47
+    assert mh_match.contained_by(mh63)
+    assert mh_match.contained_by(mh47)
+
+    assert round(mh_match.jaccard(mh63), 5) == round(0.367346938, 5)
+    assert round(mh_match.jaccard(mh47), 5) == round(0.364372469, 5)
 
 
 def test_simple_identical(runtmp):
