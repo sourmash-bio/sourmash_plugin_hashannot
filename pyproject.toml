@@ -5,10 +5,14 @@ readme = "README.md"
 requires-python = ">=3.10"
 version = "0.1"
 
-dependencies = ["sourmash>=4.8.11,<5", "pyinterval==1.2.0"]
+dependencies = ["sourmash>=4.8.11,<5",
+                "pyinterval==1.2.0",
+                "sourmash_utils==0.2",
+                ]
 
 [metadata]
 license = { text = "BSD 3-Clause License" }
 
 [project.entry-points."sourmash.cli_script"]
 extract_surrounding_command = "sourmash_plugin_hashannot:Command_Extract"
+make_hashannotdb_command = "sourmash_plugin_hashannot:Command_Make_HashAnnotDB"

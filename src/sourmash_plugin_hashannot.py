@@ -1,7 +1,7 @@
 """hashannot plugin @CTB"""
 
 usage="""
-   sourmash scripts extract_surrounding
+   sourmash scripts <specific command>
 """
 
 epilog="""
@@ -18,7 +18,8 @@ from interval import interval
 import gzip
 
 from sourmash.plugins import CommandLinePlugin
-
+import sourmash_utils
+from sourmash.sourmash_args import calculate_moltype
 
 ###
 
@@ -58,6 +59,7 @@ class Command_Extract(CommandLinePlugin):
         subparser.add_argument('contigs')
         subparser.add_argument('sigfile')
         subparser.add_argument('-o', '--output-contigs')
+        sourmash_utils.add_standard_minhash_args(subparser)
 
     def main(self, args):
         # code that we actually run.
@@ -67,7 +69,7 @@ class Command_Extract(CommandLinePlugin):
 
 def extract_surrounding(args):
     idx = sourmash.load_file_as_index(args.sigfile)
-    idx = idx.select(ksize=31, moltype='DNA') # @CTB
+    idx = idx.select(ksize=args.ksize, moltype='DNA') # @CTB
     sigs = list(idx.signatures())
     assert len(sigs) == 1
     query_sig = sigs[0]
@@ -185,3 +187,45 @@ def extract_runs(hash_positions, len_sequence, *, min_runcount=1):
             ivals.append(interval[run_start_pos, len_sequence - 1])
 
     return ivals
+
+
+#
+# CLI plugin - supports 'sourmash scripts make_hashannotdb'
+#
+
+class Command_Make_HashAnnotDB(CommandLinePlugin):
+    """
+    ...
+    """
+    
+    command = 'make_hashannotdb' # 'scripts <command>'
+    description = __doc__       # output with -h @CTB
+    usage = usage               # output with no args/bad args as well as -h @CTB
+    epilog = epilog             # output with -h
+    formatter_class = argparse.RawTextHelpFormatter # do not reformat multiline
+
+    def __init__(self, subparser):
+        super().__init__(subparser)
+        subparser.add_argument('genome')
+        subparser.add_argument('gff_file')
+        subparser.add_argument('-o', '--output-sqlite-db', required=True)
+        sourmash_utils.add_standard_minhash_args(subparser)
+
+    def main(self, args):
+        # code that we actually run.
+        super().main(args)
+        make_hashannotdb(args)
+
+
+def make_hashannotdb(args):
+    print('here!')
+    moltype = calculate_moltype(args, 'DNA')
+    print(f"ksize={args.ksize} moltype={moltype} scaled={args.scaled}")
+
+    with open(args.gff_file) as fp:
+        lines = [ x.strip() for x in fp if not x.startswith('#') ]
+        print(f"loaded {len(lines)} rows from '{args.gff_file}'")
+        line = lines[0].split('\t')
+        for n, tok in enumerate(line):
+            print(n, tok)
+        record_name, feature_id, feature_type, start, end, _, strand, _, annot = line
