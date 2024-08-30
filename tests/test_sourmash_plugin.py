@@ -53,3 +53,12 @@ def test_simple_identical(runtmp):
     assert "original 500000, extracted 500000" in out
 
     assert os.path.exists(contigs)
+
+
+def test_make_hashannotdb(runtmp):
+    shew47 = utils.get_test_data('shew-47.500k.fa.gz')
+    shew47_gff = utils.get_test_data('shew-47.500k.gff')
+    outdb = runtmp.output('foo.sqldb')
+
+    runtmp.sourmash('scripts', 'make_hashannotdb',
+                    shew47, shew47_gff, '-o', outdb)
