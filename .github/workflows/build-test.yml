@@ -1,3 +1,8 @@
+# basic test runner for sourmash plugin:
+# 1. install stuff in environment.yaml from conda (with caching)
+# 2. install this package
+# 3. run tests with 'make test'
+
 name: "run tests"
 on:
   pull_request:
