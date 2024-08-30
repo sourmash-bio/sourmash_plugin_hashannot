@@ -1,44 +1,12 @@
-# sourmash_plugin_xyz: a template for sourmash plugins
+# sourmash_plugin_hashannot: extract and/or annotate sourmash matches
 
-This is a good place to start if you're writing a plugin for
-[sourmash (sourmash-bio/sourmash/)](https://github.com/sourmash-bio/sourmash/).
+[sourmash](https://sourmash.bio) is a tool for biological sequence analysis and comparisons.
 
-Note: plugins were added in [sourmash v4.7.0](https://github.com/sourmash-bio/sourmash/releases/tag/v4.7.0).
+The hashannot plugin provides functionality to do two commonly requested
+sourmash tasks:
 
-## Instructions
-
-You can use this repo as a template repo to create a new plugin!
-
-See [this set of changes](https://github.com/ctb/sourmash_plugin_template_test1/pull/1) for the minimal diff needed to get a plugin working!
-
-### Building from a template:
-
-First, go to [the GitHub page](https://github.com/sourmash-bio/sourmash_plugin_template) and click "Use this template" to create a new repository.
-
-Clone that repository into your development space.
-
-Then, search for all places where 'xyz' is present, and replace
-'xyz' with the name of your plugin.
-
-Next, edit the code in `src/sourmash_plugin_xyz.py` to implement the plugin
-(you'll probably want to change the name of that file, too.)
-
-Then run `pip install .` to install and test your plugin! You can also
-run `pip install -e .` to install it in editable mode, which is more
-convenient for development.
-
-## Examples
-
-[sourmash_plugin_avro](https://github.com/sourmash-bio/sourmash_plugin_avro)
-and
-[sourmash_plugin_load_urls](https://github.com/sourmash-bio/sourmash_plugin_load_urls)
-are two examples you can follow.
-
-## Template docs for new plugin built from this template.
-
-Delete everything from this line on up and put in your new README ;).
-
-# sourmash_plugin_xyz
+1. extract genomic regions around matching sourmash matches
+2. annotate hashes based on genome annotations (GFF files)
 
 ## Installation
 
@@ -48,7 +16,32 @@ pip install sourmash_plugin_xyz
 
 ## Usage
 
-non-xyz info goes here!
+The hashannot plugin provides the following sourmash commands (under
+`sourmash scripts`):
+
+1. `extract_surrounding` - use sourmash hashes to extract genomic regions from a FASTA file.
+2. ...
+
+### `extract_surrounding`
+
+The `extract_surrounding` command can be used to get the underlying
+sequence that drives matches between genomes.  It extracts the maximal
+contiguous extent of sequence around each matching hash, stopping at
+(and not including) neighboring non-matching hashes.
+
+To use it, create a sketch from one genome or set of matches, and then
+use that sketch on other genomes.
+
+The following example will extract matching regions from shew-63, using
+hashes from shew-47, and place the regions in `shew-matches.fa.gz`.
+```
+sourmash sketch dna tests/test-data/shew-47.500k.fa.gz -o shew-47.sig.zip
+sourmash scripts extract_surrounding tests/test-data/shew-63.500k.fa.gz \
+    shew-47.sig.zip -o shew-matches.fa.gz
+```
+
+CTB: Future improvements will include greedy merging of regions as
+long as the overall match stays above a given containment threshold.
 
 ## Support
 

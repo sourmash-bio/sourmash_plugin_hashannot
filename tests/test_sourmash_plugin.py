@@ -16,3 +16,71 @@ def test_run_sourmash(runtmp):
     print(runtmp.last_result.out)
     print(runtmp.last_result.err)
     assert runtmp.last_result.status != 0                    # no args provided, ok ;)
+
+
+def test_simple(runtmp):
+    shew47 = utils.get_test_data('shew-47.500k.fa.gz')
+    shew63 = utils.get_test_data('shew-63.500k.fa.gz')
+
+    # sketch 47
+    sig47 = runtmp.output('47.sig.zip')
+    runtmp.sourmash('sketch', 'dna', shew47, '-o', sig47)
+    ss = list(sourmash.load_file_as_signatures(sig47))[0]
+    mh47 = ss.minhash
+
+    # extract from 63
+    contigs = runtmp.output('out.fa')
+    runtmp.sourmash('scripts', 'extract_surrounding', shew63, sig47,
+                    '-o', contigs)
+
+    out = runtmp.last_result.out
+    assert "original 500000, extracted 293015" in out
+
+    assert os.path.exists(contigs)
+
+    # create a sketch from extracted contigs
+    match_sig = runtmp.output('matches.sig.zip')
+    runtmp.sourmash('sketch', 'dna', contigs, '-o', match_sig)
+
+    ss = list(sourmash.load_file_as_signatures(match_sig))[0]
+    mh_match = ss.minhash
+
+    # sketch 63
+    sig63 = runtmp.output('63.sig.zip')
+    runtmp.sourmash('sketch', 'dna', shew63, '-o', sig63)
+    ss = list(sourmash.load_file_as_signatures(sig63))[0]
+    mh63 = ss.minhash
+
+    # matches should be contained in both 63 and 47
+    assert mh_match.contained_by(mh63)
+    assert mh_match.contained_by(mh47)
+
+    assert round(mh_match.jaccard(mh63), 5) == round(0.367346938, 5)
+    assert round(mh_match.jaccard(mh47), 5) == round(0.364372469, 5)
+
+
+def test_simple_identical(runtmp):
+    shew47 = utils.get_test_data('shew-47.500k.fa.gz')
+
+    # sketch 47
+    sig47 = runtmp.output('47.sig.zip')
+    runtmp.sourmash('sketch', 'dna', shew47, '-o', sig47)
+
+    # extract from 47
+    contigs = runtmp.output('out.fa')
+    runtmp.sourmash('scripts', 'extract_surrounding', shew47, sig47,
+                    '-o', contigs)
+
+    out = runtmp.last_result.out
+    assert "original 500000, extracted 500000" in out
+
+    assert os.path.exists(contigs)
+
+
+def test_make_hashannotdb(runtmp):
+    shew47 = utils.get_test_data('shew-47.500k.fa.gz')
+    shew47_gff = utils.get_test_data('shew-47.500k.gff')
+    outdb = runtmp.output('foo.sqldb')
+
+    runtmp.sourmash('scripts', 'make_hashannotdb',
+                    shew47, shew47_gff, '-o', outdb)
